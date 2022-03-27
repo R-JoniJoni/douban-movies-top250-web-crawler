@@ -26,9 +26,9 @@ func (r *Robot) Crawl() []byte {
 
 	req.Header.Add("User-Agent", r.UserAgent) // 处理反爬虫的手段1：设置HTTP报文中的User-Agent字段
 
-	fmt.Println("Now crawling " + r.Url)
+	fmt.Println("Now crawling " + r.Url) // 开始爬top250中的一页
 	client := &http.Client{}
-	resp, err := client.Do(req) // 开始爬top250中的一页
+	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatalf("cannot do a request: %v\n", resp)
 	}
