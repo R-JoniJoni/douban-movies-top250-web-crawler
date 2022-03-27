@@ -7,9 +7,12 @@
 
 # Test binary, built with `go test -c`
 *.test
+page/get_page_test.go
+test
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+data/
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
