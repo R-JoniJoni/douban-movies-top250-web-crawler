@@ -17,8 +17,8 @@ type Robot struct {
 	UserAgent string
 }
 
-// CrawlRankingPage 方法爬取top250大页面的一页HTML，不是具体的某个属于top250的某一部电影对应页面的HTML，它返回页面的HTML
-func (r *Robot) CrawlRankingPage() []byte {
+// Crawl 方法爬取页面的HTML，并返回
+func (r *Robot) Crawl() []byte {
 	req, err := http.NewRequest("GET", r.Url, nil) // 依据http包的规则，创建一个Request，之后利用它进行GET操作
 	if err != nil {
 		log.Fatalf("cannot new a request: %v\n", err)
@@ -26,6 +26,7 @@ func (r *Robot) CrawlRankingPage() []byte {
 
 	req.Header.Add("User-Agent", r.UserAgent) // 处理反爬虫的手段1：设置HTTP报文中的User-Agent字段
 
+	fmt.Println("Now crawling " + r.Url)
 	client := &http.Client{}
 	resp, err := client.Do(req) // 开始爬top250中的一页
 	if err != nil {
@@ -45,10 +46,8 @@ func (r *Robot) CrawlRankingPage() []byte {
 		log.Fatalf("cannot read from the response's body: %v\n", err)
 	}
 
+	if len(body) == 0 {
+		fmt.Printf("Failed to get url: %s, skip this and continue to do something else.\n", r.Url)
+	}
 	return body
-}
-
-// CrawlMoviePage 方法爬取具体的某一部电影页面的HTML，并把其存入 ./data/contents/ 下的一个txt文件中
-func (r *Robot) CrawlMoviePage() error {
-	return fmt.Errorf("NOT A FINISHED METHOD")
 }
