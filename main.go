@@ -1,16 +1,14 @@
 package main
 
 import (
+	"douban-movies-top250-web-crawler/node"
 	"douban-movies-top250-web-crawler/page"
-	"encoding/csv"
-	"fmt"
+	"douban-movies-top250-web-crawler/relation"
 	"io/ioutil"
 	"log"
 	"math/rand"
-	"os"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -57,120 +55,17 @@ func main() {
 		regExp := regexp.MustCompile(movieUrl)
 		urls := regExp.FindAllStringSubmatch(string(body), -1)
 
-		crawlMoviesAndSaveTxt(urls, i, userAgents) // 开始爬具体的电影内容
-		getNodes()                                 // 开始在txt中找到电影名、导演名、演员名、电影类型，并存为csv文件
-		getRelations()                             // 在txt中找到导演电影关系、演员电影关系、合作关系、电影类型从属关系，并存为csv文件
+		crawlMoviesAndSaveTxt(urls, i, userAgents) // 爬具体的电影内容
 	}
-}
 
-func getRelations() {
-
-}
-
-func getNodes() {
-	fmt.Println("Now getting Nodes.")
-	id := 0
 	directors := make(map[string]int, 0)
 	actors := make(map[string]int, 0)
 	films := make(map[string]int, 0)
 	movieTypes := make(map[string]int, 0)
 
-	for i := 0; i < 250; i++ { // 循环在每个txt文件中找
-		file, err := os.Open("data/contents/movie" + strconv.Itoa(i) + ".txt")
-		if err != nil {
-			continue
-		}
-		moviePage, err := ioutil.ReadAll(file)
-		if err != nil {
-			log.Fatalf("cannot read all from file: %v\n", err)
-		}
+	node.GetNodes(directors, actors, films, movieTypes)         // 在txt中找到电影名、导演名、演员名、电影类型，并存为csv文件
+	relation.GetRelations(directors, actors, films, movieTypes) // 在txt中找到导演电影关系、演员电影关系、合作关系、电影类型从属关系，并存为csv文件
 
-		// 找电影名
-		regExp := regexp.MustCompile(`<title> {8}.*? \(豆瓣\)</title>`)
-		film := regExp.Find(moviePage)
-		filmStr := string(film)
-		filmStr = strings.TrimPrefix(filmStr, `<title>        `)
-		filmStr = strings.TrimSuffix(filmStr, ` (豆瓣)</title>`)
-		if _, ok := films[filmStr]; !ok {
-			films[filmStr] = id
-			id++
-		}
-
-		// 找导演名
-		regExp = regexp.MustCompile(`"director":.*?]`)
-		directorNoise := regExp.Find(moviePage)
-		regExp = regexp.MustCompile(`"name": ".*?"`)
-		director := regExp.FindAll(directorNoise, -1)
-		for _, v := range director {
-			directorStr := string(v)
-			directorStr = strings.TrimPrefix(directorStr, `"name": "`)
-			directorStr = strings.TrimSuffix(directorStr, `"`)
-			if _, ok := directors[directorStr]; !ok {
-				directors[directorStr] = id
-				id++
-			}
-		}
-
-		// 找演员名
-		regExp = regexp.MustCompile(`"actor":.*?]`)
-		actorNoise := regExp.Find(moviePage)
-		regExp = regexp.MustCompile(`"name": ".*?"`)
-		actor := regExp.FindAll(actorNoise, -1)
-		for _, v := range actor {
-			actorStr := string(v)
-			actorStr = strings.TrimPrefix(actorStr, `"name": "`)
-			actorStr = strings.TrimSuffix(actorStr, `"`)
-			if _, ok := actors[actorStr]; !ok {
-				actors[actorStr] = id
-				id++
-			}
-		}
-
-		// 找类型名
-		regExp = regexp.MustCompile(`<span property="v:genre">.*?</span>`)
-		movieType := regExp.FindAll(moviePage, -1)
-		for _, v := range movieType {
-			typeStr := string(v)
-			typeStr = strings.TrimPrefix(typeStr, `<span property="v:genre">`)
-			typeStr = strings.TrimSuffix(typeStr, `</span>`)
-			if _, ok := movieTypes[typeStr]; !ok {
-				movieTypes[typeStr] = id
-				id++
-			}
-		}
-
-		file.Close()
-	}
-
-	// 存csv文件
-	saveCsv(films, "film")
-	saveCsv(actors, "actor")
-	saveCsv(directors, "director")
-	saveCsv(movieTypes, "type")
-
-	fmt.Println("All Nodes have been written into csv files.")
-}
-
-func saveCsv(myMap map[string]int, fileName string) {
-	csvFile, err := os.Create("data/details/" + fileName + ".csv")
-	if err != nil {
-		log.Fatalf("cannot open csv file %s: %v\n", fileName, err)
-	}
-	defer csvFile.Close()
-
-	// 获取csv的Writer
-	writer := csv.NewWriter(csvFile)
-	// 并写入csv文件
-	for name, id := range myMap {
-		oneLine := []string{name, strconv.Itoa(id)}
-		err := writer.Write(oneLine)
-		if err != nil {
-			log.Fatalf("cannot write csv file: %v\n", err)
-		}
-	}
-
-	// 确保所有内存数据刷到csv文件
-	writer.Flush()
 }
 
 func crawlMoviesAndSaveTxt(urls [][]string, i int, userAgents []string) {
@@ -181,7 +76,7 @@ func crawlMoviesAndSaveTxt(urls [][]string, i int, userAgents []string) {
 			UserAgent: userAgents[rand.Intn(len(userAgents))],
 		}
 		movieBody := movieRobot.Crawl()
-		movieBody = CutNewLine(movieBody)                                                           // 为了之后正则表达式匹配方便，去掉所有的换行符
+		movieBody = cutNewLine(movieBody)                                                           // 为了之后正则表达式匹配方便，去掉所有的换行符
 		err := ioutil.WriteFile("data/contents/movie"+strconv.Itoa(i*25+j)+".txt", movieBody, 0644) // 把爬到的页面HTML存入txt文件中
 		if err != nil {
 			log.Fatalf("cannot write in file: %v", err)
@@ -189,7 +84,7 @@ func crawlMoviesAndSaveTxt(urls [][]string, i int, userAgents []string) {
 	}
 }
 
-func CutNewLine(body []byte) []byte {
+func cutNewLine(body []byte) []byte {
 	count := 0
 	for _, v := range body {
 		if v == '\n' {
