@@ -1,6 +1,7 @@
 package main
 
 import (
+	"douban-movies-top250-web-crawler/db"
 	"douban-movies-top250-web-crawler/node"
 	"douban-movies-top250-web-crawler/page"
 	"douban-movies-top250-web-crawler/relation"
@@ -65,7 +66,7 @@ func main() {
 
 	node.GetNodes(directors, actors, films, movieTypes)         // 在txt中找到电影名、导演名、演员名、电影类型，并存为csv文件
 	relation.GetRelations(directors, actors, films, movieTypes) // 在txt中找到导演电影关系、演员电影关系、合作关系、电影类型从属关系，并存为csv文件
-
+	db.Import2Db()                                              // 把csv文件都导入到neo4j的import文件夹下
 }
 
 func crawlMoviesAndSaveTxt(urls [][]string, i int, userAgents []string) {

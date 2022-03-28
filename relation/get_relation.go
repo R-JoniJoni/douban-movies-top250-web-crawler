@@ -45,15 +45,15 @@ func GetRelations(
 
 	fmt.Println("Finished getting Relations. Now saving Relations to csv files.")
 
-	saveRelation2Csv(actedIn, "acted_in")
-	saveRelation2Csv(belongTo, "belong_to")
-	saveRelation2Csv(cooperation, "cooperation")
-	saveRelation2Csv(directed, "directed")
+	saveRelation2Csv(actedIn, "acted_in", "出演")
+	saveRelation2Csv(belongTo, "belong_to", "属于")
+	saveRelation2Csv(cooperation, "cooperation", "合作")
+	saveRelation2Csv(directed, "directed", "拍了")
 
 	fmt.Println("Finishen saving Relations to files.")
 }
 
-func saveRelation2Csv(myMap map[int][]int, fileName string) {
+func saveRelation2Csv(myMap map[int][]int, fileName string, relation string) {
 	csvFile, err := os.Create("data/details/" + fileName + ".csv")
 	if err != nil {
 		log.Fatalf("cannot open csv file %s: %v\n", fileName, err)
@@ -65,7 +65,7 @@ func saveRelation2Csv(myMap map[int][]int, fileName string) {
 	// 写入csv文件
 	for k, vs := range myMap {
 		for _, v := range vs {
-			oneLine := []string{strconv.Itoa(k), strconv.Itoa(v)}
+			oneLine := []string{strconv.Itoa(k), strconv.Itoa(v), relation}
 			err := writer.Write(oneLine)
 			if err != nil {
 				log.Fatalf("cannot write relations to csv file: %v\n", err)
