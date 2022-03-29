@@ -5,6 +5,7 @@ import (
 	"douban-movies-top250-web-crawler/node"
 	"douban-movies-top250-web-crawler/page"
 	"douban-movies-top250-web-crawler/relation"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -42,7 +43,7 @@ func main() {
 	}
 
 	// 爬取排名页面，一共10个，每爬到一个排名页面就搜索页面内的电影，并对其进行相应参数的提取，存到csv文件里
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 1; i++ {
 		rankUrl := "https://movie.douban.com/top250" + "?start=" + strconv.Itoa(i*25) + "&filter="
 		r := &page.Robot{
 			Url:       rankUrl,
@@ -55,6 +56,7 @@ func main() {
 		// 使用正则表达式找到具体的电影页面
 		regExp := regexp.MustCompile(movieUrl)
 		urls := regExp.FindAllStringSubmatch(string(body), -1)
+		fmt.Println("urls =", urls)
 
 		crawlMoviesAndSaveTxt(urls, i, userAgents) // 爬具体的电影内容
 	}
@@ -70,10 +72,11 @@ func main() {
 }
 
 func crawlMoviesAndSaveTxt(urls [][]string, i int, userAgents []string) {
-	for j := 0; j < 25; j++ {
+	for j := 0; j < 5; j++ {
+		fmt.Println("2 * i =", i, "urls[2*i] =", urls[2*i], "urls[2*i][0] =", urls[2*i][0])
 		movieRobot := &page.Robot{
-			Url:       urls[2*i][0],
-			SleepTime: 5 * time.Second,
+			Url:       urls[2*j][0],
+			SleepTime: 10 * time.Second,
 			UserAgent: userAgents[rand.Intn(len(userAgents))],
 		}
 		movieBody := movieRobot.Crawl()
